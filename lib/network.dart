@@ -1,3 +1,5 @@
+import 'package:neural_network/activation_functions/activation_function.dart';
+
 import 'layer.dart';
 
 class NeuralNetwork{
@@ -12,5 +14,11 @@ class NeuralNetwork{
       outputs = layer.calculateOutput(outputs);
     }
     return outputs;
+  }
+
+  void changeAllActivationFunctions(ActivationFunction newFunction) {
+    for (Layer layer in layers) {
+      layer.changeActivationFunction(newFunction);
+    }
   }
 }

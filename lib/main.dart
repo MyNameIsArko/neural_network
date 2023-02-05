@@ -2,8 +2,14 @@ import 'dart:ui';
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:neural_network/activation_functions/hyperbolic_tangent_function.dart';
+import 'package:neural_network/activation_functions/linear_function.dart';
+import 'package:neural_network/activation_functions/relu_function.dart';
+import 'package:neural_network/activation_functions/sigmoid_function.dart';
+import 'package:neural_network/activation_functions/threshold_function.dart';
 import 'package:neural_network/network.dart';
 
+import 'activation_functions/activation_function.dart';
 import 'layer.dart';
 
 void main() {
@@ -39,6 +45,14 @@ class _MyHomePageState extends State<MyHomePage> {
   final List<double> points = List<double>.generate(100, (index) => index - 50);
   List<ScatterSpot> scatterPoints = [];
   NeuralNetwork network = NeuralNetwork();
+  List<ActivationFunction> activationFunctions = [
+    LinearFunction(),
+    ReLUFunction(),
+    ThresholdFunction(),
+    SigmoidFunction(),
+    HyperbolicTangentFunction(),
+  ];
+  String selectedFunctionName = LinearFunction().getName();
   @override
   void initState() {
     for (int i = -40; i < 41; i+=4) {
@@ -50,8 +64,8 @@ class _MyHomePageState extends State<MyHomePage> {
         scatterPoints.add(ScatterSpot(i.toDouble(), j.toDouble(), color: pointColor));
       }
     }
-    Layer hiddenLayer = Layer(2, 3);
-    Layer outputLayer = Layer(3, 1);
+    Layer hiddenLayer = Layer(2, 3, LinearFunction());
+    Layer outputLayer = Layer(3, 1, LinearFunction());
     network.addLayer(hiddenLayer);
     network.addLayer(outputLayer);
     super.initState();
@@ -161,7 +175,38 @@ class _MyHomePageState extends State<MyHomePage> {
                   );
                 })
               ),
-              Text("Activation Function")
+              Column(
+                children: <Widget>[
+                  const Text(
+                    "Activation Function:",
+                    style: TextStyle(
+                      fontSize: 20,
+                    ),
+                  ),
+                  DropdownButton(
+                    value: selectedFunctionName,
+                    onChanged: (String? value) {
+                      setState(() {
+                        ActivationFunction newFunction = LinearFunction();
+                        for (ActivationFunction function in activationFunctions) {
+                          if (function.getName() == value!) {
+                            newFunction = function;
+                            break;
+                          }
+                        }
+                        selectedFunctionName = value!;
+                        network.changeAllActivationFunctions(newFunction);
+                      });
+                    },
+                    items: activationFunctions.map<DropdownMenuItem<String>>((ActivationFunction function) {
+                      return DropdownMenuItem(
+                        value: function.getName(),
+                        child: Text(function.getName())
+                      );
+                    }).toList(),
+                  )
+                ]
+              ),
             ],
           ),
           Flexible(
