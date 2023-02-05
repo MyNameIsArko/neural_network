@@ -204,7 +204,12 @@ class _MyHomePageState extends State<MyHomePage> {
                         child: Text(function.getName())
                       );
                     }).toList(),
-                  )
+                  ),
+                  Image.asset(
+                    "functions_images/$selectedFunctionName.png",
+                    width: 200,
+                    height: 200,
+                  ),
                 ]
               ),
             ],
