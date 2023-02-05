@@ -37,9 +37,6 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final List<double> points = List<double>.generate(100, (index) => index - 50);
-  double _w1 = 1;
-  double _w2 = 1;
-  double _b = 0;
   List<ScatterSpot> scatterPoints = [];
   NeuralNetwork network = NeuralNetwork();
   @override
@@ -82,111 +79,131 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Column(
-          children: [
-
-            Row(
-              children: [
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 30),
-                  child: const Text("w_1:"),
-                ),
-                Flexible(
-                  child: Slider(
-                    value: _w1,
-                    max: 10,
-                    min: -10,
-                    onChanged: (value) {
-                      setState(() {
-                        _w1 = value;
-                      });
-                    },
-                  ),
-                ),
-              ],
-            ),
-            Row(
-              children: [
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 30),
-                  child: const Text("w_2:"),
-                ),
-                Flexible(
-                  child: Slider(
-                    value: _w2,
-                    max: 10,
-                    min: -10,
-                    onChanged: (value) {
-                      setState(() {
-                        _w2 = value;
-                      });
-                    },
-                  ),
-                ),
-              ],
-            ),
-            Row(
-              children: [
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 30),
-                  child: const Text("b:"),
-                ),
-                Flexible(
-                  child: Slider(
-                    value: _b,
-                    max: 200,
-                    min: -200,
-                    onChanged: (value) {
-                      setState(() {
-                        _b = value;
-                      });
-                    },
-                  ),
-                ),
-              ],
-            ),
-            Flexible(
-              child: Stack(
-                children: [
-                  Opacity(
-                    opacity: 0.5,
-                    child: ScatterChart(
-                      ScatterChartData(
-                        gridData: FlGridData(show: false),
-                        clipData: FlClipData.all(),
-                        scatterTouchData: ScatterTouchData(enabled: false),
-                        minX: -40,
-                        maxX: 40,
-                        minY: -40,
-                        maxY: 40,
-                        scatterSpots: getScatterSpots(),
+      body: Column(
+        children: <Widget>[
+          Row(
+            children: [
+              Column(
+                children: <Widget>[
+                  const Text(
+                    "Weights:",
+                    style: TextStyle(
+                      fontSize: 20,
+                    ),
+                  )
+                ] + List<Widget>.generate(9, (index) {
+                  Layer layer;
+                  int j = 0;
+                  if (index < 6) {
+                    layer = network.layers[0];
+                    j = index;
+                  } else {
+                    layer = network.layers[1];
+                    j = index - 6;
+                  }
+                  return SizedBox(
+                    height: 20,
+                    width: 300,
+                    child: SliderTheme(
+                      data: const SliderThemeData(
+                        thumbShape: RoundSliderThumbShape(enabledThumbRadius: 8),
                       ),
-                      swapAnimationDuration: Duration(),
+                      child: Slider(
+                        value: layer.weights[j],
+                        max: 10,
+                        min: -10,
+                        onChanged: (value) {
+                          setState(() {
+                            layer.updateWeight(j, value);
+                          });
+                        },
+                      ),
                     ),
-                  ),
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: 30, horizontal: 45),
-                    child: ScatterChart(
-                      ScatterChartData(
-                        scatterSpots: scatterPoints,
-                        gridData: FlGridData(show: false),
-                        borderData: FlBorderData(show: false),
-                        clipData: FlClipData.all(),
-                        scatterTouchData: ScatterTouchData(enabled: false),
-                        titlesData: FlTitlesData(show: false),
-                        minX: -40,
-                        maxX: 40,
-                        minY: -40,
-                        maxY: 40,
-                      )
-                    ),
-                  ),
-                ],
+                  );
+                })
               ),
-            )
-          ],
-        ),
+              Column(
+                children: <Widget>[
+                  const Text(
+                    "Biases:",
+                    style: TextStyle(
+                      fontSize: 20,
+                    ),
+                  )
+                ] + List<Widget>.generate(4, (index) {
+                  Layer layer;
+                  int j = 0;
+                  if (index < 3) {
+                    layer = network.layers[0];
+                    j = index;
+                  } else {
+                    layer = network.layers[1];
+                    j = index - 3;
+                  }
+                  return SizedBox(
+                    height: 20,
+                    width: 300,
+                    child: SliderTheme(
+                      data: const SliderThemeData(
+                        thumbShape: RoundSliderThumbShape(enabledThumbRadius: 8),
+                      ),
+                      child: Slider(
+                        value: layer.biases[j],
+                        max: 100,
+                        min: -100,
+                        onChanged: (value) {
+                          setState(() {
+                            layer.updateBias(j, value);
+                          });
+                        },
+                      ),
+                    ),
+                  );
+                })
+              ),
+              Text("Activation Function")
+            ],
+          ),
+          Flexible(
+            child: Stack(
+              children: [
+                Opacity(
+                  opacity: 0.5,
+                  child: ScatterChart(
+                    ScatterChartData(
+                      gridData: FlGridData(show: false),
+                      clipData: FlClipData.all(),
+                      scatterTouchData: ScatterTouchData(enabled: false),
+                      minX: -40,
+                      maxX: 40,
+                      minY: -40,
+                      maxY: 40,
+                      scatterSpots: getScatterSpots(),
+                    ),
+                    swapAnimationDuration: Duration(),
+                  ),
+                ),
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 30, horizontal: 45),
+                  child: ScatterChart(
+                    ScatterChartData(
+                      scatterSpots: scatterPoints,
+                      gridData: FlGridData(show: false),
+                      borderData: FlBorderData(show: false),
+                      clipData: FlClipData.all(),
+                      scatterTouchData: ScatterTouchData(enabled: false),
+                      titlesData: FlTitlesData(show: false),
+                      minX: -40,
+                      maxX: 40,
+                      minY: -40,
+                      maxY: 40,
+                    )
+                  ),
+                ),
+              ],
+            ),
+          )
+        ],
       ),
     );
   }
