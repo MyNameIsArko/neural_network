@@ -104,84 +104,84 @@ class _MyHomePageState extends State<MyHomePage> {
         children: <Widget>[
           Row(
             children: [
-              Column(
-                children: <Widget>[
-                  const Text(
-                    "Weights:",
-                    style: TextStyle(
-                      fontSize: 20,
-                    ),
-                  )
-                ] + List<Widget>.generate(network.weightSize(), (index) {
-                  Layer layer;
-                  int j = 0;
-                  if (index < 6) {
-                    layer = network.layers[0];
-                    j = index;
-                  } else {
-                    layer = network.layers[1];
-                    j = index - 6;
-                  }
-                  return SizedBox(
-                    height: 20,
-                    width: 300,
-                    child: SliderTheme(
-                      data: const SliderThemeData(
-                        thumbShape: RoundSliderThumbShape(enabledThumbRadius: 8),
-                      ),
-                      child: Slider(
-                        value: layer.weights[j],
-                        max: 1,
-                        min: -1,
-                        onChanged: (value) {
-                          setState(() {
-                            layer.updateWeight(j, value);
-                          });
-                        },
-                      ),
-                    ),
-                  );
-                })
-              ),
-              Column(
-                children: <Widget>[
-                  const Text(
-                    "Biases:",
-                    style: TextStyle(
-                      fontSize: 20,
-                    ),
-                  )
-                ] + List<Widget>.generate(network.biasSize(), (index) {
-                  Layer layer;
-                  int j = 0;
-                  if (index < 3) {
-                    layer = network.layers[0];
-                    j = index;
-                  } else {
-                    layer = network.layers[1];
-                    j = index - 3;
-                  }
-                  return SizedBox(
-                    height: 20,
-                    width: 300,
-                    child: SliderTheme(
-                      data: const SliderThemeData(
-                        thumbShape: RoundSliderThumbShape(enabledThumbRadius: 8),
-                      ),
-                      child: Slider(
-                        value: layer.biases[j],
-                        max: 1,
-                        min: -1,
-                        onChanged: (value) {
-                          setState(() {
-                            layer.updateBias(j, value);
-                          });
-                        },
-                      ),
-                    ),
-                  );
-                })
-              ),
+              // Column(
+              //   children: <Widget>[
+              //     const Text(
+              //       "Weights:",
+              //       style: TextStyle(
+              //         fontSize: 20,
+              //       ),
+              //     )
+              //   ] + List<Widget>.generate(network.weightSize(), (index) {
+              //     Layer layer;
+              //     int j = 0;
+              //     if (index < 6) {
+              //       layer = network.layers[0];
+              //       j = index;
+              //     } else {
+              //       layer = network.layers[1];
+              //       j = index - 6;
+              //     }
+              //     return SizedBox(
+              //       height: 20,
+              //       width: 300,
+              //       child: SliderTheme(
+              //         data: const SliderThemeData(
+              //           thumbShape: RoundSliderThumbShape(enabledThumbRadius: 8),
+              //         ),
+              //         child: Slider(
+              //           value: layer.weights[j],
+              //           max: 100,
+              //           min: -100,
+              //           onChanged: (value) {
+              //             setState(() {
+              //               layer.updateWeight(j, value);
+              //             });
+              //           },
+              //         ),
+              //       ),
+              //     );
+              //   })
+              // ),
+              // Column(
+              //   children: <Widget>[
+              //     const Text(
+              //       "Biases:",
+              //       style: TextStyle(
+              //         fontSize: 20,
+              //       ),
+              //     )
+              //   ] + List<Widget>.generate(network.biasSize(), (index) {
+              //     Layer layer;
+              //     int j = 0;
+              //     if (index < 3) {
+              //       layer = network.layers[0];
+              //       j = index;
+              //     } else {
+              //       layer = network.layers[1];
+              //       j = index - 3;
+              //     }
+              //     return SizedBox(
+              //       height: 20,
+              //       width: 300,
+              //       child: SliderTheme(
+              //         data: const SliderThemeData(
+              //           thumbShape: RoundSliderThumbShape(enabledThumbRadius: 8),
+              //         ),
+              //         child: Slider(
+              //           value: layer.biases[j],
+              //           max: 100,
+              //           min: -100,
+              //           onChanged: (value) {
+              //             setState(() {
+              //               layer.updateBias(j, value);
+              //             });
+              //           },
+              //         ),
+              //       ),
+              //     );
+              //   })
+              // ),
               Column(
                 children: <Widget>[
                   const Text(
@@ -264,6 +264,28 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                   ),
                   Text("${network.correctClassified(dataPoints)} / ${dataPoints.length}"),
+                ],
+              ),
+              Column(
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        network.gradientDescent(dataPoints);
+                      });
+                    },
+                    style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.grey.shade200)),
+                    child:  const Text("Learn one step"),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        network.randomizeParameters();
+                      });
+                    },
+                    style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.grey.shade200)),
+                    child:  const Text("Randomize weights and biases"),
+                  ),
                 ],
               ),
             ],

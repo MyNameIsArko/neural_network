@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:neural_network/activation_functions/activation_function.dart';
 import 'package:neural_network/data_point.dart';
 
@@ -5,6 +7,7 @@ import 'layer.dart';
 
 class NeuralNetwork{
   List<Layer> layers = [];
+  double alphaRate = 0.01;
   void addLayer(Layer layer) {
     layers.add(layer);
   }
@@ -69,4 +72,73 @@ class NeuralNetwork{
     }
     return amount;
   }
+
+  List<double> gradientWeights(List<DataPoint> inputs) {
+    List<double> gradient = List.filled(weightSize() + biasSize(), 0);
+
+    double h = 0.000001;
+
+    int i = 0;
+
+    // Compute weights gradient
+    for (Layer layer in layers) {
+      for (int w = 0; w < layer.weights.length; w++) {
+        double cost1 = costs(inputs);
+        layer.weights[w] += h;
+        double cost2 = costs(inputs);
+        layer.weights[w] -= h;
+        gradient[i] = (cost2 - cost1) / h;
+        i += 1;
+      }
+    }
+
+    // Compute biases gradient
+    for (Layer layer in layers) {
+      for (int b = 0; b < layer.biases.length; b++) {
+        double cost1 = costs(inputs);
+        layer.biases[b] += h;
+        double cost2 = costs(inputs);
+        layer.biases[b] -= h;
+        gradient[i] = (cost2 - cost1) / h;
+        i += 1;
+      }
+    }
+
+    return gradient;
+  }
+
+  void gradientDescent(List<DataPoint> inputs) {
+    List<double> gradient = gradientWeights(inputs);
+
+    int i = 0;
+
+    // Update weights
+    for (Layer layer in layers) {
+      for (int w = 0; w < layer.weights.length; w++) {
+        layer.weights[w] -= alphaRate * gradient[i];
+        i += 1;
+      }
+    }
+
+    // Update biases
+    for (Layer layer in layers) {
+      for (int b = 0; b < layer.biases.length; b++) {
+        layer.biases[b] -= alphaRate * gradient[i];
+        i += 1;
+      }
+    }
+  }
+
+  void randomizeParameters() {
+    Random random = Random();
+    for (Layer layer in layers) {
+      for (int i = 0; i < layer.weights.length; i++) {
+        layer.weights[i] = random.nextInt(100) - 50;
+      }
+      for (int i = 0; i < layer.biases.length; i++) {
+        layer.biases[i] = random.nextInt(100) - 50;
+      }
+    }
+  }
+
 }
