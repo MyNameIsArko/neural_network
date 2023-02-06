@@ -65,8 +65,8 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     selectedPrecision = gridPrecision.first;
-    for (double i = -40; i < 41; i+=4) {
-      for (double j = -40; j < 41; j+=8) {
+    for (double i = -40; i < 41; i+=6) {
+      for (double j = -40; j < 41; j+=12) {
         dataPoints.add(DataPoint([i, j], CornerParabola2D()));
       }
     }
@@ -104,6 +104,8 @@ class _MyHomePageState extends State<MyHomePage> {
         children: <Widget>[
           Row(
             children: [
+              // Disabled because of slider min/max value interrupting values of learning
+
               // Column(
               //   children: <Widget>[
               //     const Text(
@@ -131,8 +133,8 @@ class _MyHomePageState extends State<MyHomePage> {
               //         ),
               //         child: Slider(
               //           value: layer.weights[j],
-              //           max: 100,
-              //           min: -100,
+              //           max: 20,
+              //           min: -20,
               //           onChanged: (value) {
               //             setState(() {
               //               layer.updateWeight(j, value);
@@ -170,8 +172,8 @@ class _MyHomePageState extends State<MyHomePage> {
               //         ),
               //         child: Slider(
               //           value: layer.biases[j],
-              //           max: 100,
-              //           min: -100,
+              //           max: 20,
+              //           min: -20,
               //           onChanged: (value) {
               //             setState(() {
               //               layer.updateBias(j, value);
@@ -182,6 +184,7 @@ class _MyHomePageState extends State<MyHomePage> {
               //     );
               //   })
               // ),
+              Spacer(),
               Column(
                 children: <Widget>[
                   const Text(
@@ -266,8 +269,20 @@ class _MyHomePageState extends State<MyHomePage> {
                   Text("${network.correctClassified(dataPoints)} / ${dataPoints.length}"),
                 ],
               ),
+              const SizedBox(
+                width: 25,
+              ),
               Column(
                 children: [
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        network.randomizeParameters();
+                      });
+                    },
+                    style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.grey.shade200)),
+                    child:  const Text("Randomize weights and biases"),
+                  ),
                   TextButton(
                     onPressed: () {
                       setState(() {
@@ -279,15 +294,23 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                   TextButton(
                     onPressed: () {
-                      setState(() {
-                        network.randomizeParameters();
-                      });
+                        int i = 0;
+                        while (network.correctClassified(dataPoints) < dataPoints.length - 1 && i < 1e5) {
+                          network.gradientDescent(dataPoints);
+                          if (i % 10 == 0) {
+                            setState(() {
+                              print(i);
+                            });
+                          }
+                          i += 1;
+                        }
                     },
                     style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.grey.shade200)),
-                    child:  const Text("Randomize weights and biases"),
+                    child:  const Text("Learn a good chunk"),
                   ),
                 ],
               ),
+              Spacer(),
             ],
           ),
           Flexible(
