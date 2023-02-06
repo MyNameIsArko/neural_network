@@ -7,7 +7,10 @@ import 'package:neural_network/activation_functions/linear_function.dart';
 import 'package:neural_network/activation_functions/relu_function.dart';
 import 'package:neural_network/activation_functions/sigmoid_function.dart';
 import 'package:neural_network/activation_functions/threshold_function.dart';
+import 'package:neural_network/data_point.dart';
+import 'package:neural_network/data_spread/corner_parabola_2d.dart';
 import 'package:neural_network/network.dart';
+import 'package:neural_network/precision.dart';
 
 import 'activation_functions/activation_function.dart';
 import 'layer.dart';
@@ -42,8 +45,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final List<double> points = List<double>.generate(100, (index) => index - 50);
-  List<ScatterSpot> scatterPoints = [];
+  List<DataPoint> dataPoints = [];
   NeuralNetwork network = NeuralNetwork();
   List<ActivationFunction> activationFunctions = [
     LinearFunction(),
@@ -52,28 +54,33 @@ class _MyHomePageState extends State<MyHomePage> {
     SigmoidFunction(),
     HyperbolicTangentFunction(),
   ];
+  List<Precision> gridPrecision = [
+    Precision(4, "Ultra Performance"),
+    Precision(2, "Performance"),
+    Precision(1, "Quality"),
+    Precision(0.5, "Ultra Quality")
+  ];
+  late Precision selectedPrecision;
   String selectedFunctionName = LinearFunction().getName();
   @override
   void initState() {
-    for (int i = -40; i < 41; i+=4) {
-      for (int j = -40; j < 41; j+=8) {
-        Color pointColor = Colors.red;
-        if (j < -i - 10 && j < 10 && i < 10) {
-          pointColor = Colors.blue;
-        }
-        scatterPoints.add(ScatterSpot(i.toDouble(), j.toDouble(), color: pointColor));
+    selectedPrecision = gridPrecision.first;
+    for (double i = -40; i < 41; i+=4) {
+      for (double j = -40; j < 41; j+=8) {
+        dataPoints.add(DataPoint([i, j], CornerParabola2D()));
       }
     }
     Layer hiddenLayer = Layer(2, 3, LinearFunction());
-    Layer outputLayer = Layer(3, 1, LinearFunction());
+    Layer outputLayer = Layer(3, 2, LinearFunction());
     network.addLayer(hiddenLayer);
     network.addLayer(outputLayer);
     super.initState();
   }
 
   Color getColor(double x1, double x2) {
-    double o = network.computeOutput([x1, x2])[0];
-    if (o > 0) {
+    double o1 = network.computeOutput([x1, x2])[0];
+    double o2 = network.computeOutput([x1, x2])[1];
+    if (o1 > o2) {
       return Colors.blue;
     } else {
       return Colors.red;
@@ -82,9 +89,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
   List<ScatterSpot> getScatterSpots() {
     List<ScatterSpot> spots = [];
-    for (double i = -40; i < 41; i += 2) {
-      for (double j = -40; j < 41; j += 2) {
-        spots.add(ScatterSpot(i, j, color: getColor(i, j), radius: 16));
+    for (double i = -40; i < 41; i += selectedPrecision.value) {
+      for (double j = -40; j < 41; j += selectedPrecision.value) {
+        spots.add(ScatterSpot(i, j, color: getColor(i, j), radius: 8 * selectedPrecision.value));
       }
     }
     return spots;
@@ -105,7 +112,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       fontSize: 20,
                     ),
                   )
-                ] + List<Widget>.generate(9, (index) {
+                ] + List<Widget>.generate(network.weightSize(), (index) {
                   Layer layer;
                   int j = 0;
                   if (index < 6) {
@@ -124,8 +131,8 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                       child: Slider(
                         value: layer.weights[j],
-                        max: 10,
-                        min: -10,
+                        max: 1,
+                        min: -1,
                         onChanged: (value) {
                           setState(() {
                             layer.updateWeight(j, value);
@@ -144,7 +151,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       fontSize: 20,
                     ),
                   )
-                ] + List<Widget>.generate(4, (index) {
+                ] + List<Widget>.generate(network.biasSize(), (index) {
                   Layer layer;
                   int j = 0;
                   if (index < 3) {
@@ -163,8 +170,8 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                       child: Slider(
                         value: layer.biases[j],
-                        max: 100,
-                        min: -100,
+                        max: 1,
+                        min: -1,
                         onChanged: (value) {
                           setState(() {
                             layer.updateBias(j, value);
@@ -212,6 +219,53 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ]
               ),
+              const SizedBox(
+                width: 25,
+              ),
+              Column(
+                children: [
+                  const Text(
+                    "Grid accuracy:",
+                    style: TextStyle(
+                      fontSize: 20,
+                    ),
+                  ),
+                  DropdownButton(
+                    value: selectedPrecision,
+                    onChanged: (Precision? value) {
+                      setState(() {
+                        selectedPrecision = value!;
+                      });
+                    },
+                    items: gridPrecision.map<DropdownMenuItem<Precision>>((Precision precision) {
+                      return DropdownMenuItem(
+                          value: precision,
+                          child: Text(precision.name)
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(
+                    height: 25,
+                  ),
+                  const Text(
+                    "Cost:",
+                    style: TextStyle(
+                      fontSize: 20,
+                    ),
+                  ),
+                  Text(network.costs(dataPoints).toStringAsFixed(2)),
+                  const SizedBox(
+                    height: 25,
+                  ),
+                  const Text(
+                    "Correct:",
+                    style: TextStyle(
+                      fontSize: 20,
+                    ),
+                  ),
+                  Text("${network.correctClassified(dataPoints)} / ${dataPoints.length}"),
+                ],
+              ),
             ],
           ),
           Flexible(
@@ -237,7 +291,9 @@ class _MyHomePageState extends State<MyHomePage> {
                   margin: const EdgeInsets.symmetric(vertical: 30, horizontal: 45),
                   child: ScatterChart(
                     ScatterChartData(
-                      scatterSpots: scatterPoints,
+                      scatterSpots: dataPoints.map((DataPoint point) {
+                        return ScatterSpot(point.inputs[0],point.inputs[1], color: point.pointColor);
+                      }).toList(),
                       gridData: FlGridData(show: false),
                       borderData: FlBorderData(show: false),
                       clipData: FlClipData.all(),

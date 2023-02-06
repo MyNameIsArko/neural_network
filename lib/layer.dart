@@ -8,8 +8,8 @@ class Layer {
   ActivationFunction activationFunction;
 
   Layer(this.inputAmount, this.outputAmount, this.activationFunction) {
-    weights = List.filled(inputAmount * outputAmount, 0);
-    biases = List.filled(outputAmount, 0);
+    weights = List.filled(inputAmount * outputAmount, 0.5);
+    biases = List.filled(outputAmount, 0.5);
   }
 
   List<double> calculateOutput(List<double> inputs) {
@@ -41,5 +41,10 @@ class Layer {
 
   void changeActivationFunction(ActivationFunction newFunction) {
     activationFunction = newFunction;
+  }
+
+  double valueError(double predictedValue, double actualValue) {
+    double error = predictedValue - actualValue;
+    return error * error;
   }
 }
