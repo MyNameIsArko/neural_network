@@ -42,9 +42,4 @@ class Layer {
   void changeActivationFunction(ActivationFunction newFunction) {
     activationFunction = newFunction;
   }
-
-  double valueError(double predictedValue, double actualValue) {
-    double error = predictedValue - actualValue;
-    return error * error;
-  }
 }

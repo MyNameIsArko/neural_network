@@ -7,6 +7,11 @@ class ThresholdFunction implements LinearFunction {
   }
 
   @override
+  double getActivationDerivativeOutput(double value) {
+    return 0;
+  }
+
+  @override
   String getName() {
     return "Threshold";
   }

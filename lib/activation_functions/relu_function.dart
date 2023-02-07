@@ -13,4 +13,9 @@ class ReLUFunction implements LinearFunction {
     return "ReLU";
   }
 
+  @override
+  double getActivationDerivativeOutput(double value) {
+    return value > 0 ? 1 : 0;
+  }
+
 }

@@ -7,6 +7,11 @@ class LinearFunction implements ActivationFunction {
   }
 
   @override
+  double getActivationDerivativeOutput(double value) {
+    return 1;
+  }
+
+  @override
   String getName() {
     return "Linear";
   }

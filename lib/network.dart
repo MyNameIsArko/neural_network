@@ -42,25 +42,34 @@ class NeuralNetwork{
     return size;
   }
 
-  double cost(DataPoint point) {
+  double getCost(double x, double y) {
+    double diff = x - y;
+    return diff * diff;
+  }
+
+  double getCostDerivative(double x, double y) {
+    double diff = x - y;
+    return 2 * diff;
+  }
+
+  double getPointCost(DataPoint point) {
     List<double> evaluatedValues = computeOutput(point.inputs);
-    Layer lastLayer = layers[layers.length - 1];
     double error = 0;
     for (int i = 0; i < evaluatedValues.length; i++) {
-      error += lastLayer.valueError(evaluatedValues[i], point.expectedOutputs[i]);
+      error += getCost(evaluatedValues[i], point.expectedOutputs[i]);
     }
     return error;
   }
 
-  double costs(List<DataPoint> points) {
+  double getSumCosts(List<DataPoint> points) {
     double sumError = 0;
     for (DataPoint point in points) {
-      sumError += cost(point);
+      sumError += getPointCost(point);
     }
     return sumError / points.length;
   }
 
-  int correctClassified(List<DataPoint> points) {
+  int getCorrectClassified(List<DataPoint> points) {
     int amount = 0;
     for (DataPoint point in points) {
       List<double> evaluation = computeOutput(point.inputs);
@@ -73,20 +82,20 @@ class NeuralNetwork{
     return amount;
   }
 
-  List<double> gradientWeights(List<DataPoint> inputs) {
+  List<double> getGradient(List<DataPoint> inputs) {
     List<double> gradient = List.filled(weightSize() + biasSize(), 0);
 
-    double h = 0.0000000001;
+    double h = 0.0000001;
 
     int i = 0;
 
-    double cost1 = costs(inputs);
+    double cost1 = getSumCosts(inputs);
 
     // Compute weights gradient
     for (Layer layer in layers) {
       for (int w = 0; w < layer.weights.length; w++) {
         layer.weights[w] += h;
-        double cost2 = costs(inputs);
+        double cost2 = getSumCosts(inputs);
         layer.weights[w] -= h;
         gradient[i] = (cost2 - cost1) / h;
         i += 1;
@@ -97,7 +106,7 @@ class NeuralNetwork{
     for (Layer layer in layers) {
       for (int b = 0; b < layer.biases.length; b++) {
         layer.biases[b] += h;
-        double cost2 = costs(inputs);
+        double cost2 = getSumCosts(inputs);
         layer.biases[b] -= h;
         gradient[i] = (cost2 - cost1) / h;
         i += 1;
@@ -107,8 +116,8 @@ class NeuralNetwork{
     return gradient;
   }
 
-  void gradientDescent(List<DataPoint> inputs) {
-    List<double> gradient = gradientWeights(inputs);
+  void runGradientDescent(List<DataPoint> inputs) {
+    List<double> gradient = getGradient(inputs);
 
     int i = 0;
 
@@ -141,4 +150,26 @@ class NeuralNetwork{
     }
   }
 
+  List<DataPoint> getBatchOfInput(List<DataPoint> points) {
+    List<int> indexes = List.generate(points.length, (index) => index);
+    indexes.shuffle();
+
+    List<DataPoint> batchPoints = [];
+    for(int i = 0; i < 10; i++) {
+      DataPoint point = points.elementAt(indexes[i]);
+      batchPoints.add(point);
+    }
+    return batchPoints;
+  }
+
+  // double nodeValue(Layer layer, DataPoint point) {
+  //   return layer.activationFunction.getActivationDerivativeOutput(point.inputs[0]) * getCostDerivative(point.inputs[0], point.expectedOutputs[0]);
+  // }
+  //
+  // void updateLastLayer(List<DataPoint> points) {
+  //   Layer lastLayer = layers[layers.length - 1];
+  //   List<double> gradient = List.filled(lastLayer.weights.length + lastLayer.biases.length, 0);
+  //
+  //
+  // }
 }

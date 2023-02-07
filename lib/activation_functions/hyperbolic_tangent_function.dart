@@ -12,4 +12,9 @@ class HyperbolicTangentFunction implements LinearFunction{
   String getName() {
     return "Hyperbolic Tangent";
   }
+
+  @override
+  double getActivationDerivativeOutput(double value) {
+    return (4 * exp(2 * value)) / pow((exp(2 * value) + 1), 2);
+  }
 }

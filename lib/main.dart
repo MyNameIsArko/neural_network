@@ -256,7 +256,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       fontSize: 20,
                     ),
                   ),
-                  Text(network.costs(dataPoints).toStringAsFixed(2)),
+                  Text(network.getSumCosts(dataPoints).toStringAsFixed(2)),
                   const SizedBox(
                     height: 25,
                   ),
@@ -266,7 +266,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       fontSize: 20,
                     ),
                   ),
-                  Text("${network.correctClassified(dataPoints)} / ${dataPoints.length}"),
+                  Text("${network.getCorrectClassified(dataPoints)} / ${dataPoints.length}"),
                 ],
               ),
               const SizedBox(
@@ -283,20 +283,27 @@ class _MyHomePageState extends State<MyHomePage> {
                     style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.grey.shade200)),
                     child:  const Text("Randomize weights and biases"),
                   ),
+                  const SizedBox(
+                    height: 10,
+                  ),
                   TextButton(
                     onPressed: () {
                       setState(() {
-                        network.gradientDescent(dataPoints);
+                        network.runGradientDescent(network.getBatchOfInput(dataPoints));
                       });
                     },
                     style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.grey.shade200)),
                     child:  const Text("Learn one step"),
                   ),
+                  const SizedBox(
+                    height: 10,
+                  ),
                   TextButton(
                     onPressed: () {
                         int i = 0;
-                        while (network.correctClassified(dataPoints) < dataPoints.length - 1 && i < 1e5) {
-                          network.gradientDescent(dataPoints);
+                        // One bad classified point is "good enough"
+                        while (network.getCorrectClassified(dataPoints) < dataPoints.length - 1 && i < 1e5) {
+                          network.runGradientDescent(network.getBatchOfInput(dataPoints));
                           if (i % 10 == 0) {
                             setState(() {
                               print(i);

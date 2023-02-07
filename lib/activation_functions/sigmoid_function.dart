@@ -9,6 +9,11 @@ class SigmoidFunction implements LinearFunction {
   }
 
   @override
+  double getActivationDerivativeOutput(double value) {
+    return exp(value) / pow((exp(value) + 1), 2);
+  }
+
+  @override
   String getName() {
     return "Sigmoid";
   }
