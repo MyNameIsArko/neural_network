@@ -6,10 +6,20 @@ class Layer {
   int inputAmount;
   int outputAmount;
   ActivationFunction activationFunction;
+  late List<double> equationResults;
+  late List<double> activationResults;
+  late List<double> gradientWeights;
+  late List<double> gradientBias;
+  late List<double> nodeValues;
 
   Layer(this.inputAmount, this.outputAmount, this.activationFunction) {
     weights = List.filled(inputAmount * outputAmount, 0.5);
     biases = List.filled(outputAmount, 0.5);
+    equationResults = List.filled(outputAmount, 0);
+    activationResults = List.filled(outputAmount, 0);
+    gradientWeights = List.filled(inputAmount * outputAmount, 0);
+    gradientBias = List.filled(outputAmount, 0);
+    nodeValues = List.filled(outputAmount, 0);
   }
 
   List<double> calculateOutput(List<double> inputs) {
@@ -22,7 +32,9 @@ class Layer {
         outputs[i] += weights[j + i * inputAmount] * inputs[j];
       }
       outputs[i] += biases[i];
+      equationResults[i] = outputs[i];
       outputs[i] = activationFunction.getActivationOutput(outputs[i]);
+      activationResults[i] = outputs[i];
     }
     return outputs;
   }
@@ -41,5 +53,11 @@ class Layer {
 
   void changeActivationFunction(ActivationFunction newFunction) {
     activationFunction = newFunction;
+  }
+
+  void clearGradientValues() {
+    gradientWeights = List.filled(inputAmount * outputAmount, 0);
+    gradientBias = List.filled(outputAmount, 0);
+    nodeValues = List.filled(outputAmount, 0);
   }
 }

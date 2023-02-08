@@ -289,7 +289,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   TextButton(
                     onPressed: () {
                       setState(() {
-                        network.runGradientDescent(network.getBatchOfInput(dataPoints));
+                        network.runGradientDescent(network.getBatchOfInput(dataPoints, 10));
                       });
                     },
                     style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.grey.shade200)),
@@ -302,8 +302,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     onPressed: () {
                         int i = 0;
                         // One bad classified point is "good enough"
-                        while (network.getCorrectClassified(dataPoints) < dataPoints.length - 1 && i < 1e5) {
-                          network.runGradientDescent(network.getBatchOfInput(dataPoints));
+                        while (network.getCorrectClassified(dataPoints) < dataPoints.length - 1 && i < 3e5) {
+                          network.runGradientDescent(network.getBatchOfInput(dataPoints, 10));
                           if (i % 10 == 0) {
                             setState(() {
                               print(i);
