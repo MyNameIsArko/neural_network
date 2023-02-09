@@ -75,7 +75,7 @@ class Layer {
     nodeValues = List.filled(outputAmount, 0);
   }
 
-  void clearMomentum() {
+  void clearOptimizer() {
     momentumWeights = List.filled(inputAmount * outputAmount, 0);
     momentumBias = List.filled(outputAmount, 0);
     rmsWeights = List.filled(inputAmount * outputAmount, 0);

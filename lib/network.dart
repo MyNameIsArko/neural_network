@@ -104,8 +104,9 @@ class NeuralNetwork {
         layer.biases[i] = random.nextDouble() * 2 - 1;
       }
 
-      // Since we're changing parameters we need to reset momentum
-      layer.clearMomentum();
+      // Since we're changing parameters we need to reset optimizer
+      layer.clearOptimizer();
+      timeStep = 0;
     }
   }
 
