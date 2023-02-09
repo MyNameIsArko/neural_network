@@ -8,6 +8,7 @@ import 'layer.dart';
 class NeuralNetwork {
   List<Layer> layers = [];
   double learnRate = 0.01;
+  double momentumPreserve = 0.9;
 
   /// Add layer to the network
   void addLayer(Layer layer) {
@@ -96,6 +97,9 @@ class NeuralNetwork {
       for (int i = 0; i < layer.biases.length; i++) {
         layer.biases[i] = random.nextDouble() * 2 - 1;
       }
+
+      // Since we're changing parameters we need to reset momentum
+      layer.clearMomentum();
     }
   }
 
@@ -146,14 +150,18 @@ class NeuralNetwork {
     // which is output of activation function from layer before this
     for (int n = 0; n < lastLayer.outputAmount; n++) {
       for (int i = 0; i < lastLayer.inputAmount; i++) {
-        lastLayer.gradientWeights[i + n * lastLayer.inputAmount] += activationsFromLayerBefore[i] * lastLayer.nodeValues[n];
+        // We preserve momentum from previous weight gradient
+        double momentum = momentumPreserve * lastLayer.momentumGradientWeights[i + n * lastLayer.inputAmount];
+        lastLayer.gradientWeights[i + n * lastLayer.inputAmount] += activationsFromLayerBefore[i] * lastLayer.nodeValues[n] + momentum;
       }
     }
 
     // Compute gradient for each bias from this layer
     // Derivative of equation by given bias is just 1
     for (int n = 0; n < lastLayer.outputAmount; n++) {
-      lastLayer.gradientBias[n] += 1 * lastLayer.nodeValues[n];
+      // We preserve momentum from previous bias gradient
+      double momentum = momentumPreserve * lastLayer.momentumGradientBias[n];
+      lastLayer.gradientBias[n] += 1 * lastLayer.nodeValues[n] + momentum;
     }
   }
 
@@ -202,14 +210,18 @@ class NeuralNetwork {
       // which is output of activation function from layer before this
       for (int n = 0; n < hiddenLayer.outputAmount; n++) {
         for (int i = 0; i < hiddenLayer.inputAmount; i++) {
-          hiddenLayer.gradientWeights[i + n * hiddenLayer.inputAmount] += activationsFromLayerBefore[i] * hiddenLayer.nodeValues[n];
+          // We preserve momentum from previous weight gradient
+          double momentum = momentumPreserve * hiddenLayer.momentumGradientWeights[i + n * hiddenLayer.inputAmount];
+          hiddenLayer.gradientWeights[i + n * hiddenLayer.inputAmount] += activationsFromLayerBefore[i] * hiddenLayer.nodeValues[n] + momentum;
         }
       }
 
       // Compute gradient for each bias from this layer
       // Derivative of equation by given bias is just 1
       for (int n = 0; n < hiddenLayer.outputAmount; n++) {
-        hiddenLayer.gradientBias[n] += 1 * hiddenLayer.nodeValues[n];
+        // We preserve momentum from previous bias gradient
+        double momentum = momentumPreserve * hiddenLayer.momentumGradientBias[n];
+        hiddenLayer.gradientBias[n] += 1 * hiddenLayer.nodeValues[n] + momentum;
       }
     }
   }
@@ -217,17 +229,37 @@ class NeuralNetwork {
   /// Apply all stored gradients with dividing gradients by amount of points
   /// that was used to create this gradient
   void applyAllGradients(int pointsAmount) {
+    // Average weight gradients
+    for (Layer layer in layers) {
+      for (int w = 0; w < layer.weights.length; w++) {
+        layer.gradientWeights[w] /= pointsAmount;
+      }
+    }
+
+    // Average bias gradients
+    for (Layer layer in layers) {
+      for (int b = 0; b < layer.biases.length; b++) {
+        layer.gradientBias[b] /= pointsAmount;
+      }
+    }
+
     // Update weights
     for (Layer layer in layers) {
       for (int w = 0; w < layer.weights.length; w++) {
-        layer.weights[w] -= learnRate * layer.gradientWeights[w] / pointsAmount;
+        // Save gradient weight for future momentum
+        layer.momentumGradientWeights[w] = layer.gradientWeights[w];
+
+        layer.weights[w] -= learnRate * (1 - momentumPreserve) * layer.gradientWeights[w];
       }
     }
 
     // Update biases
     for (Layer layer in layers) {
       for (int b = 0; b < layer.biases.length; b++) {
-        layer.biases[b] -= learnRate * layer.gradientBias[b] / pointsAmount;
+        // Save gradient bias for future momentum
+        layer.momentumGradientBias[b] = layer.gradientBias[b];
+
+        layer.biases[b] -= learnRate * (1 - momentumPreserve) * layer.gradientBias[b];
       }
     }
   }

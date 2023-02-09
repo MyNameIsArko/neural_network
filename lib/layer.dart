@@ -11,6 +11,8 @@ class Layer {
   late List<double> gradientWeights;
   late List<double> gradientBias;
   late List<double> nodeValues;
+  late List<double> momentumGradientWeights;
+  late List<double> momentumGradientBias;
 
   Layer(this.inputAmount, this.outputAmount, this.activationFunction) {
     weights = List.filled(inputAmount * outputAmount, 0.5);
@@ -20,6 +22,8 @@ class Layer {
     gradientWeights = List.filled(inputAmount * outputAmount, 0);
     gradientBias = List.filled(outputAmount, 0);
     nodeValues = List.filled(outputAmount, 0);
+    momentumGradientWeights = List.filled(inputAmount * outputAmount, 0);
+    momentumGradientBias = List.filled(outputAmount, 0);
   }
 
   // Calculate output from given inputs, by multiplying inputs by weights
@@ -65,5 +69,10 @@ class Layer {
     gradientWeights = List.filled(inputAmount * outputAmount, 0);
     gradientBias = List.filled(outputAmount, 0);
     nodeValues = List.filled(outputAmount, 0);
+  }
+
+  void clearMomentum() {
+    momentumGradientWeights = List.filled(inputAmount * outputAmount, 0);
+    momentumGradientBias = List.filled(outputAmount, 0);
   }
 }
