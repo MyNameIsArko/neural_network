@@ -4,7 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:neural_network/activation_functions/hyperbolic_tangent_function.dart';
 import 'package:neural_network/activation_functions/linear_function.dart';
-import 'package:neural_network/activation_functions/relu_function.dart';
+import 'package:neural_network/activation_functions/lrelu_function.dart';
 import 'package:neural_network/activation_functions/sigmoid_function.dart';
 import 'package:neural_network/activation_functions/threshold_function.dart';
 import 'package:neural_network/data_point.dart';
@@ -13,6 +13,8 @@ import 'package:neural_network/network.dart';
 import 'package:neural_network/precision.dart';
 
 import 'activation_functions/activation_function.dart';
+import 'activation_functions/elu_function.dart';
+import 'activation_functions/relu_function.dart';
 import 'layer.dart';
 
 void main() {
@@ -50,6 +52,8 @@ class _MyHomePageState extends State<MyHomePage> {
   List<ActivationFunction> activationFunctions = [
     LinearFunction(),
     ReLUFunction(),
+    LReLUFunction(),
+    ELUFunction(),
     ThresholdFunction(),
     SigmoidFunction(),
     HyperbolicTangentFunction(),
@@ -70,9 +74,11 @@ class _MyHomePageState extends State<MyHomePage> {
         dataPoints.add(DataPoint([i, j], CornerParabola2D()));
       }
     }
-    Layer hiddenLayer = Layer(2, 3, LinearFunction());
+    Layer hiddenLayer1 = Layer(2, 3, LinearFunction());
+    // Layer hiddenLayer2 = Layer(3, 3, LinearFunction());
     Layer outputLayer = Layer(3, 2, LinearFunction());
-    network.addLayer(hiddenLayer);
+    network.addLayer(hiddenLayer1);
+    // network.addLayer(hiddenLayer2);
     network.addLayer(outputLayer);
     super.initState();
   }
@@ -291,6 +297,16 @@ class _MyHomePageState extends State<MyHomePage> {
                       setState(() {
                         network.runGradientDescent(network.getBatchOfInput(dataPoints, 10));
                       });
+                      // print("================================================");
+                      // print("Weights:");
+                      // for (Layer layer in network.layers) {
+                      //   print(layer.weights);
+                      // }
+                      // print("Biases:");
+                      // for (Layer layer in network.layers) {
+                      //   print(layer.weights);
+                      // }
+                      // print("================================================");
                     },
                     style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.grey.shade200)),
                     child:  const Text("Learn one step"),
@@ -302,9 +318,9 @@ class _MyHomePageState extends State<MyHomePage> {
                     onPressed: () {
                         int i = 0;
                         // One bad classified point is "good enough"
-                        while (network.getCorrectClassified(dataPoints) < dataPoints.length - 1 && i < 3e5) {
+                        while (network.getCorrectClassified(dataPoints) < dataPoints.length - 1 && i < 15e4) {
                           network.runGradientDescent(network.getBatchOfInput(dataPoints, 10));
-                          if (i % 10 == 0) {
+                          if (i % 1000 == 0) {
                             setState(() {
                               print(i);
                             });

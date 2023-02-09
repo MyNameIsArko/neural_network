@@ -7,7 +7,7 @@ import 'layer.dart';
 
 class NeuralNetwork {
   List<Layer> layers = [];
-  double learnRate = 0.1;
+  double learnRate = 0.01;
 
   /// Add layer to the network
   void addLayer(Layer layer) {

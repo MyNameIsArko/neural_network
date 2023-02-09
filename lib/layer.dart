@@ -22,18 +22,24 @@ class Layer {
     nodeValues = List.filled(outputAmount, 0);
   }
 
+  // Calculate output from given inputs, by multiplying inputs by weights
   List<double> calculateOutput(List<double> inputs) {
     if (inputs.length != inputAmount) {
       throw FormatException("Inputs given (${inputs.length}) and expected amount ($inputAmount) does not match!");
     }
     List<double> outputs = List.filled(outputAmount, 0);
+    // For each node in layer calculate it's weights with inputs
     for (int i = 0; i < outputAmount; i++) {
       for (int j = 0; j < inputAmount; j++) {
         outputs[i] += weights[j + i * inputAmount] * inputs[j];
       }
+      // Add bias to the equation
       outputs[i] += biases[i];
+      // Save equation for backpropagation use
       equationResults[i] = outputs[i];
+      // Change the output to fire value from activation function
       outputs[i] = activationFunction.getActivationOutput(outputs[i]);
+      // Save activation for backpropagation use
       activationResults[i] = outputs[i];
     }
     return outputs;
