@@ -75,10 +75,10 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     }
     Layer hiddenLayer1 = Layer(2, 3, LinearFunction());
-    // Layer hiddenLayer2 = Layer(3, 3, LinearFunction());
+    Layer hiddenLayer2 = Layer(3, 3, LinearFunction());
     Layer outputLayer = Layer(3, 2, LinearFunction());
     network.addLayer(hiddenLayer1);
-    // network.addLayer(hiddenLayer2);
+    network.addLayer(hiddenLayer2);
     network.addLayer(outputLayer);
     super.initState();
   }
@@ -295,7 +295,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   TextButton(
                     onPressed: () {
                       setState(() {
-                        network.runGradientDescent(network.getBatchOfInput(dataPoints, 10));
+                        network.runGradientDescent(dataPoints, 10);
                       });
                       // print("================================================");
                       // print("Weights:");
@@ -318,8 +318,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     onPressed: () {
                         int i = 0;
                         // One bad classified point is "good enough"
-                        while (network.getCorrectClassified(dataPoints) < dataPoints.length - 1 && i < 15e4) {
-                          network.runGradientDescent(network.getBatchOfInput(dataPoints, 10));
+                        while (network.getCorrectClassified(dataPoints) < dataPoints.length && i < 15e4) {
+                          network.runGradientDescent(dataPoints, 10);
                           if (i % 1000 == 0) {
                             setState(() {
                               print(i);

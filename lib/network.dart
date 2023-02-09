@@ -188,24 +188,14 @@ class NeuralNetwork {
       // which is output of activation function from layer before this
       for (int n = 0; n < layer.outputAmount; n++) {
         for (int i = 0; i < layer.inputAmount; i++) {
-          double gradient = activationsFromLayerBefore[i] * layer.nodeValues[n];
-          layer.momentumWeights[i + n * layer.inputAmount] = beta1 * layer.momentumWeights[i + n * layer.inputAmount] + (1 - beta1) * gradient;
-          layer.rmsWeights[i + n * layer.inputAmount] = beta2 * layer.rmsWeights[i + n * layer.inputAmount] + (1 - beta2) * pow(gradient, 2);
-          double moment = layer.momentumWeights[i + n * layer.inputAmount] / (1 - pow(beta1, timeStep));
-          double rms = layer.rmsWeights[i + n * layer.inputAmount] / (1 - pow(beta2, timeStep));
-          layer.gradientWeights[i + n * layer.inputAmount] += moment / (sqrt(rms) + epsilon);
+          layer.gradientWeights[i + n * layer.inputAmount] += activationsFromLayerBefore[i] * layer.nodeValues[n];
         }
       }
 
       // Compute gradient for each bias from this layer
       // Derivative of equation by given bias is just 1
       for (int n = 0; n < layer.outputAmount; n++) {
-        double gradient = 1 * layer.nodeValues[n];
-        layer.momentumBias[n] = beta1 * layer.momentumBias[n] + (1 - beta1) * gradient;
-        layer.rmsBias[n] = beta2 * layer.rmsBias[n] + (1 - beta2) * pow(gradient, 2);
-        double moment = layer.momentumBias[n] / (1 - pow(beta1, timeStep));
-        double rms = layer.rmsBias[n] / (1 - pow(beta2, timeStep));
-        layer.gradientBias[n] += moment / (sqrt(rms) + epsilon);
+        layer.gradientBias[n] += 1 * layer.nodeValues[n];
       }
     }
   }
@@ -227,17 +217,25 @@ class NeuralNetwork {
       }
     }
 
-    // Update weights
+    // Update weights using ADAM optimizer
     for (Layer layer in layers) {
       for (int w = 0; w < layer.weights.length; w++) {
-        layer.weights[w] -= learnRate * layer.gradientWeights[w];
+        layer.momentumWeights[w] = beta1 * layer.momentumWeights[w] + (1 - beta1) * layer.gradientWeights[w];
+        layer.rmsWeights[w] = beta2 * layer.rmsWeights[w] + (1 - beta2) * pow(layer.gradientWeights[w], 2);
+        double moment = layer.momentumWeights[w] / (1 - pow(beta1, timeStep));
+        double rms = layer.rmsWeights[w] / (1 - pow(beta2, timeStep));
+        layer.weights[w] -= learnRate * moment / (sqrt(rms) + epsilon);
       }
     }
 
-    // Update biases
+    // Update biases using ADAM optimizer
     for (Layer layer in layers) {
       for (int b = 0; b < layer.biases.length; b++) {
-        layer.biases[b] -= learnRate * layer.gradientBias[b];
+        layer.momentumBias[b] = beta1 * layer.momentumBias[b] + (1 - beta1) * layer.gradientBias[b];
+        layer.rmsBias[b] = beta2 * layer.rmsBias[b] + (1 - beta2) * pow(layer.gradientBias[b], 2);
+        double moment = layer.momentumBias[b] / (1 - pow(beta1, timeStep));
+        double rms = layer.rmsBias[b] / (1 - pow(beta2, timeStep));
+        layer.biases[b] -= learnRate * moment / (sqrt(rms) + epsilon);
       }
     }
   }
@@ -249,12 +247,14 @@ class NeuralNetwork {
     }
   }
 
-  /// Run gradient descent algorithm on a given batch of points
-  void runGradientDescent(List<DataPoint> points) {
+  /// Run gradient descent algorithm
+  void runGradientDescent(List<DataPoint> points, int batchAmount) {
+    List<DataPoint> miniBatch = getBatchOfInput(points, batchAmount);
+
     // We update time step to indicate new iteration
     timeStep += 1;
 
-    for (DataPoint point in points) {
+    for (DataPoint point in miniBatch) {
       // Run compute output for single point to get activation and equation results filled
       computeOutput(point.inputs);
 
