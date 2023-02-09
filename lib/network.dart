@@ -7,8 +7,14 @@ import 'layer.dart';
 
 class NeuralNetwork {
   List<Layer> layers = [];
-  double learnRate = 0.01;
-  double momentumPreserve = 0.9;
+  double learnRate = 0.001;
+  // Used for momentum
+  double beta1 = 0.9;
+  // Used for rmsProp
+  double beta2 = 0.999;
+  // To not divide by zero
+  double epsilon = 1e-8;
+  int timeStep = 0;
 
   /// Add layer to the network
   void addLayer(Layer layer) {
@@ -125,11 +131,10 @@ class NeuralNetwork {
     return batchPoints;
   }
 
-  /// Compute node values and gradients for output layer
-  void computeGradientForLastLayer(DataPoint point) {
+  void computeNodeCosts(DataPoint point) {
+    // First we compute node costs for output layer
     Layer lastLayer = layers[layers.length - 1];
 
-    // For each node in last layer compute node value for future usage
     for (int n = 0; n < lastLayer.outputAmount; n++) {
       lastLayer.nodeValues[n] =
           lastLayer.activationFunction.getActivationDerivativeOutput(
@@ -137,58 +142,10 @@ class NeuralNetwork {
               lastLayer.activationResults[n], point.expectedOutputs[n]);
     }
 
-    // Default to point inputs if there was only last layer
-    List<double> activationsFromLayerBefore = point.inputs;
-
-    // If there is layer before last layer, then get activations from there
-    if (layers.length > 1) {
-      activationsFromLayerBefore = layers[layers.length - 2].activationResults;
-    }
-
-    // Compute gradient for each weights from last layer
-    // Derivative of equation by given weight is input from the previous layer
-    // which is output of activation function from layer before this
-    for (int n = 0; n < lastLayer.outputAmount; n++) {
-      for (int i = 0; i < lastLayer.inputAmount; i++) {
-        // We preserve momentum from previous weight gradient
-        double momentum = momentumPreserve * lastLayer.momentumGradientWeights[i + n * lastLayer.inputAmount];
-        lastLayer.gradientWeights[i + n * lastLayer.inputAmount] += activationsFromLayerBefore[i] * lastLayer.nodeValues[n] + momentum;
-      }
-    }
-
-    // Compute gradient for each bias from this layer
-    // Derivative of equation by given bias is just 1
-    for (int n = 0; n < lastLayer.outputAmount; n++) {
-      // We preserve momentum from previous bias gradient
-      double momentum = momentumPreserve * lastLayer.momentumGradientBias[n];
-      lastLayer.gradientBias[n] += 1 * lastLayer.nodeValues[n] + momentum;
-    }
-  }
-
-  /// Compute node values and gradients for every layer
-  void computeGradients(DataPoint point) {
-    // First we need to get gradient for last layer to be able to go back through layers
-    computeGradientForLastLayer(point);
-
-    // If there isn't any hidden layers then we have ended
-    if (layers.length < 2) {
-      return;
-    }
-
-    // Loop through all hidden layers
-    // We know that if we go backwards, layer to the right will have calculated it nodes values
-    // that contains chain rule of derivatives up to the cost value
+    // Then we compute node costs for all hidden layers going backwards
     for(int l = layers.length - 2; l >= 0; l--) {
       Layer hiddenLayer = layers[l];
       Layer nextLayer = layers[l + 1];
-
-      // Default to point inputs if this was last layer
-      List<double> activationsFromLayerBefore = point.inputs;
-
-      // If there is layer before this one, then get activations from there
-      if (l - 1 >= 0) {
-        activationsFromLayerBefore = layers[layers.length - 2].activationResults;
-      }
 
       // For each node in hidden layer calculate node value
       for (int n = 0; n < hiddenLayer.outputAmount; n++) {
@@ -198,30 +155,56 @@ class NeuralNetwork {
         // Output of node from hidden layer affects inputs to ALL nodes in next layer,
         // so we calculate derivative of it's weight times value for that node in next layer
         for (int nNext = 0; nNext < nextLayer.outputAmount; nNext++) {
-          hiddenLayer.nodeValues[n] += nextLayer.weights[n + nNext * hiddenLayer.outputAmount] * nextLayer.nodeValues[nNext];
+          hiddenLayer.nodeValues[n] +=
+              nextLayer.weights[n + nNext * hiddenLayer.outputAmount] *
+                  nextLayer.nodeValues[nNext];
         }
 
         // Everything we multiply by how inputs for node from hidden layer affects it's output
-        hiddenLayer.nodeValues[n] *= hiddenLayer.activationFunction.getActivationDerivativeOutput(hiddenLayer.equationResults[n]);
+        hiddenLayer.nodeValues[n] *=
+            hiddenLayer.activationFunction.getActivationDerivativeOutput(
+                hiddenLayer.equationResults[n]);
+      }
+    }
+  }
+
+  /// Compute node values and gradients for every layer
+  void computeGradients(DataPoint point) {
+    // Loop through all layers
+    for(int l = layers.length - 1; l >= 0; l--) {
+      Layer layer = layers[l];
+
+      // Default to point inputs if this was last layer
+      List<double> activationsFromLayerBefore = point.inputs;
+
+      // If there is layer before this one, then get activations from there
+      if (l - 1 >= 0) {
+        activationsFromLayerBefore = layers[l - 1].activationResults;
       }
 
       // Compute gradient for each weights from this layer
       // Derivative of equation by given weight is input from the previous layer
       // which is output of activation function from layer before this
-      for (int n = 0; n < hiddenLayer.outputAmount; n++) {
-        for (int i = 0; i < hiddenLayer.inputAmount; i++) {
-          // We preserve momentum from previous weight gradient
-          double momentum = momentumPreserve * hiddenLayer.momentumGradientWeights[i + n * hiddenLayer.inputAmount];
-          hiddenLayer.gradientWeights[i + n * hiddenLayer.inputAmount] += activationsFromLayerBefore[i] * hiddenLayer.nodeValues[n] + momentum;
+      for (int n = 0; n < layer.outputAmount; n++) {
+        for (int i = 0; i < layer.inputAmount; i++) {
+          double gradient = activationsFromLayerBefore[i] * layer.nodeValues[n];
+          layer.momentumWeights[i + n * layer.inputAmount] = beta1 * layer.momentumWeights[i + n * layer.inputAmount] + (1 - beta1) * gradient;
+          layer.rmsWeights[i + n * layer.inputAmount] = beta2 * layer.rmsWeights[i + n * layer.inputAmount] + (1 - beta2) * pow(gradient, 2);
+          double moment = layer.momentumWeights[i + n * layer.inputAmount] / (1 - pow(beta1, timeStep));
+          double rms = layer.rmsWeights[i + n * layer.inputAmount] / (1 - pow(beta2, timeStep));
+          layer.gradientWeights[i + n * layer.inputAmount] += moment / (sqrt(rms) + epsilon);
         }
       }
 
       // Compute gradient for each bias from this layer
       // Derivative of equation by given bias is just 1
-      for (int n = 0; n < hiddenLayer.outputAmount; n++) {
-        // We preserve momentum from previous bias gradient
-        double momentum = momentumPreserve * hiddenLayer.momentumGradientBias[n];
-        hiddenLayer.gradientBias[n] += 1 * hiddenLayer.nodeValues[n] + momentum;
+      for (int n = 0; n < layer.outputAmount; n++) {
+        double gradient = 1 * layer.nodeValues[n];
+        layer.momentumBias[n] = beta1 * layer.momentumBias[n] + (1 - beta1) * gradient;
+        layer.rmsBias[n] = beta2 * layer.rmsBias[n] + (1 - beta2) * pow(gradient, 2);
+        double moment = layer.momentumBias[n] / (1 - pow(beta1, timeStep));
+        double rms = layer.rmsBias[n] / (1 - pow(beta2, timeStep));
+        layer.gradientBias[n] += moment / (sqrt(rms) + epsilon);
       }
     }
   }
@@ -246,20 +229,14 @@ class NeuralNetwork {
     // Update weights
     for (Layer layer in layers) {
       for (int w = 0; w < layer.weights.length; w++) {
-        // Save gradient weight for future momentum
-        layer.momentumGradientWeights[w] = layer.gradientWeights[w];
-
-        layer.weights[w] -= learnRate * (1 - momentumPreserve) * layer.gradientWeights[w];
+        layer.weights[w] -= learnRate * layer.gradientWeights[w];
       }
     }
 
     // Update biases
     for (Layer layer in layers) {
       for (int b = 0; b < layer.biases.length; b++) {
-        // Save gradient bias for future momentum
-        layer.momentumGradientBias[b] = layer.gradientBias[b];
-
-        layer.biases[b] -= learnRate * (1 - momentumPreserve) * layer.gradientBias[b];
+        layer.biases[b] -= learnRate * layer.gradientBias[b];
       }
     }
   }
@@ -273,11 +250,17 @@ class NeuralNetwork {
 
   /// Run gradient descent algorithm on a given batch of points
   void runGradientDescent(List<DataPoint> points) {
+    // We update time step to indicate new iteration
+    timeStep += 1;
+
     for (DataPoint point in points) {
       // Run compute output for single point to get activation and equation results filled
       computeOutput(point.inputs);
 
-      // Then compute node values and gradients for every layer
+      // Compute the node values
+      computeNodeCosts(point);
+
+      // Compute gradients for every layer
       computeGradients(point);
     }
     // Finally apply all collected gradients
