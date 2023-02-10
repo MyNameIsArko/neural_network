@@ -7,7 +7,7 @@ import 'layer.dart';
 
 class NeuralNetwork {
   List<Layer> layers = [];
-  double learnRate = 0.001;
+  double learnRate = 0.01;
   // Used for momentum
   double beta1 = 0.9;
   // Used for rmsProp

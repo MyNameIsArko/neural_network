@@ -48,7 +48,8 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   List<DataPoint> dataPoints = [];
-  NeuralNetwork network = NeuralNetwork();
+  late NeuralNetwork network;
+
   List<ActivationFunction> activationFunctions = [
     LinearFunction(),
     ReLUFunction(),
@@ -68,18 +69,19 @@ class _MyHomePageState extends State<MyHomePage> {
   String selectedFunctionName = LinearFunction().getName();
   @override
   void initState() {
-    selectedPrecision = gridPrecision.first;
-    for (double i = -40; i < 41; i+=6) {
-      for (double j = -40; j < 41; j+=12) {
-        dataPoints.add(DataPoint([i, j], CornerParabola2D()));
-      }
-    }
+    network = NeuralNetwork();
     Layer hiddenLayer1 = Layer(2, 3, LinearFunction());
     Layer hiddenLayer2 = Layer(3, 3, LinearFunction());
     Layer outputLayer = Layer(3, 2, LinearFunction());
     network.addLayer(hiddenLayer1);
     network.addLayer(hiddenLayer2);
     network.addLayer(outputLayer);
+    selectedPrecision = gridPrecision.first;
+    for (double i = -40; i < 41; i+=6) {
+      for (double j = -40; j < 41; j+=12) {
+        dataPoints.add(DataPoint([i, j], dataSpread: CornerParabola2D()));
+      }
+    }
     super.initState();
   }
 
@@ -316,17 +318,16 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                   TextButton(
                     onPressed: () {
-                        int i = 0;
-                        // One bad classified point is "good enough"
-                        while (network.getCorrectClassified(dataPoints) < dataPoints.length && i < 15e4) {
-                          network.runGradientDescent(dataPoints, 10);
-                          if (i % 1000 == 0) {
-                            setState(() {
-                              print(i);
-                            });
-                          }
-                          i += 1;
+                      int i = 0;
+                      while (network.getCorrectClassified(dataPoints) < dataPoints.length && i < 15e4) {
+                        network.runGradientDescent(dataPoints, 10);
+                        if (i % 1000 == 0) {
+                          setState(() {
+                            print(i);
+                          });
                         }
+                        i += 1;
+                      }
                     },
                     style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.grey.shade200)),
                     child:  const Text("Learn a good chunk"),
@@ -360,7 +361,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   child: ScatterChart(
                     ScatterChartData(
                       scatterSpots: dataPoints.map((DataPoint point) {
-                        return ScatterSpot(point.inputs[0],point.inputs[1], color: point.pointColor);
+                        return ScatterSpot(point.inputs[0],point.inputs[1], color: point.expectedOutputs[0] == 1 ? Colors.blue : Colors.red);
                       }).toList(),
                       gridData: FlGridData(show: false),
                       borderData: FlBorderData(show: false),
