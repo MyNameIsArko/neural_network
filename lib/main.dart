@@ -7,6 +7,9 @@ import 'package:neural_network/activation_functions/linear_function.dart';
 import 'package:neural_network/activation_functions/lrelu_function.dart';
 import 'package:neural_network/activation_functions/sigmoid_function.dart';
 import 'package:neural_network/activation_functions/threshold_function.dart';
+import 'package:neural_network/cost_functions/cost_function.dart';
+import 'package:neural_network/cost_functions/cross_entropy_loss.dart';
+import 'package:neural_network/cost_functions/mean_squared_error.dart';
 import 'package:neural_network/data_point.dart';
 import 'package:neural_network/data_spread/corner_parabola_2d.dart';
 import 'package:neural_network/network.dart';
@@ -65,11 +68,16 @@ class _MyHomePageState extends State<MyHomePage> {
     Precision(1, "Quality"),
     Precision(0.5, "Ultra Quality")
   ];
+  List<CostFunction> costFunctions = [
+    MeanSquaredError(),
+    CrossEntropyLoss()
+  ];
   late Precision selectedPrecision;
   String selectedFunctionName = LinearFunction().getName();
+  String selectedCostFunction = MeanSquaredError().getName();
   @override
   void initState() {
-    network = NeuralNetwork();
+    network = NeuralNetwork(MeanSquaredError());
     Layer hiddenLayer1 = Layer(2, 3, LinearFunction());
     Layer hiddenLayer2 = Layer(3, 3, LinearFunction());
     Layer outputLayer = Layer(3, 2, LinearFunction());
@@ -282,6 +290,28 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               Column(
                 children: [
+                  DropdownButton(
+                    value: selectedCostFunction,
+                    onChanged: (String? value) {
+                      setState(() {
+                        CostFunction newFunction = MeanSquaredError();
+                        for (CostFunction function in costFunctions) {
+                          if (function.getName() == value!) {
+                            newFunction = function;
+                            break;
+                          }
+                        }
+                        selectedCostFunction = value!;
+                        network.changeCostFunction(newFunction);
+                      });
+                    },
+                    items: costFunctions.map<DropdownMenuItem<String>>((CostFunction function) {
+                      return DropdownMenuItem(
+                          value: function.getName(),
+                          child: Text(function.getName())
+                      );
+                    }).toList(),
+                  ),
                   TextButton(
                     onPressed: () {
                       setState(() {

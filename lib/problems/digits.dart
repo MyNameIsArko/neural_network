@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:csv/csv.dart';
 import 'package:neural_network/activation_functions/lrelu_function.dart';
+import 'package:neural_network/cost_functions/cross_entropy_loss.dart';
 import 'package:neural_network/data_point.dart';
 import 'package:neural_network/layer.dart';
 import 'package:neural_network/network.dart';
@@ -23,7 +24,7 @@ void main() async {
     dataPoints.add(point);
   }
 
-  NeuralNetwork network = NeuralNetwork();
+  NeuralNetwork network = NeuralNetwork(CrossEntropyLoss());
   network.addLayer(Layer(784, 20, LReLUFunction()));
   network.addLayer(Layer(20, 20, LReLUFunction()));
   network.addLayer(Layer(20, 10, LReLUFunction()));

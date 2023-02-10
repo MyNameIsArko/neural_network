@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:neural_network/activation_functions/activation_function.dart';
+import 'package:neural_network/cost_functions/cost_function.dart';
 import 'package:neural_network/data_point.dart';
 
 import 'layer.dart';
@@ -15,6 +16,9 @@ class NeuralNetwork {
   // To not divide by zero
   double epsilon = 1e-8;
   int timeStep = 0;
+  CostFunction costFunction;
+
+  NeuralNetwork(this.costFunction);
 
   /// Add layer to the network
   void addLayer(Layer layer) {
@@ -38,16 +42,8 @@ class NeuralNetwork {
     }
   }
 
-  /// Return the square of difference between two points
-  double getCost(double x, double y) {
-    double diff = x - y;
-    return diff * diff;
-  }
-
-  /// Return the derivative of difference between two points
-  double getCostDerivative(double x, double y) {
-    double diff = x - y;
-    return 2 * diff;
+  void changeCostFunction(CostFunction newFunction) {
+    costFunction = newFunction;
   }
 
   /// Return the cost for single DataPoint
@@ -55,7 +51,7 @@ class NeuralNetwork {
     List<double> predictedOutputs = computeOutput(point.inputs);
     double error = 0;
     for (int i = 0; i < predictedOutputs.length; i++) {
-      error += getCost(predictedOutputs[i], point.expectedOutputs[i]);
+      error += costFunction.getCost(predictedOutputs[i], point.expectedOutputs[i]);
     }
     return error;
   }
@@ -139,7 +135,7 @@ class NeuralNetwork {
     for (int n = 0; n < lastLayer.outputAmount; n++) {
       lastLayer.nodeValues[n] =
           lastLayer.activationFunction.getActivationDerivativeOutput(
-              lastLayer.equationResults[n]) * getCostDerivative(
+              lastLayer.equationResults[n]) * costFunction.getCostDerivative(
               lastLayer.activationResults[n], point.expectedOutputs[n]);
     }
 
